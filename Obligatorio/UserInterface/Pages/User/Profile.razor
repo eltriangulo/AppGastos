@@ -1,0 +1,57 @@
+﻿@page "/Profile"
+
+<PageTitle>Profile</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject SessionLogic SessionLogic
+@inject NavigationManager NavigationManager
+
+<div class="card">
+    <div class="card-header">YOUR PROFILE
+        <button href="#" class="btn btn-primary btn-sm" @onclick="editProfile">EDIT PROFILE</button>
+    </div>
+    <div class="card-body">
+        <label class="card-text p" for="name">Name:</label>
+        <p class="card-text p" for="name">@currentUser.Name</p>
+        <br/>
+        <label class="card-text p" for="email">Surname:</label>
+        <p class="card-text p" for="email">@currentUser.Surname</p>
+        <br/>
+        <label class="card-text p" for="email">Email:</label>
+        <p class="card-text p" for="email">@currentUser.Email</p>
+        <br/>
+        <label class="card-text p" for="address">Address:</label>
+        <p class="card-text p" for="address">@currentUser.Address</p>
+        
+    </div>
+</div>
+
+@code
+{
+    private User? currentUser;
+    
+    protected override void OnInitialized()
+    {
+        currentUser = SessionLogic.GetCurrentUser();
+    }
+    
+    public void editProfile()
+    {
+        NavigationManager.NavigateTo("/EditProfile");
+    }
+}
+<style>
+    .p {
+        display: inline-block;
+    }
+    
+    button{
+        float: right;
+        align-content: center;
+    }
+    
+    label {
+        font-weight: bold;
+    }
+</style>

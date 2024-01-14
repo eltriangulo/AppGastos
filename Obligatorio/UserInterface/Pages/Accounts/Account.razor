@@ -1,0 +1,158 @@
+﻿@page "/Accounts"
+
+<PageTitle>Account List</PageTitle>
+
+@using BusinessLogic
+@using Domain
+
+@inject CreditCardLogic creditCardLogic
+@inject AccountLogic accountLogic
+@inject TransactionLogic transactionLogic
+@inject SessionLogic sessionLogic
+@inject NavigationManager NavigationManager
+
+
+
+<h1>
+    Accounts List
+    <a href="/Accounts/createAccount/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Create +</a>
+</h1>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Amount</th>
+        <th>Currency</th>
+        <th>Creation Date</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var account in accountsList)
+    {
+        <tr>
+            <td>@account.Name</td>
+            <td>@account.Amount</td>
+            <td>@account.Currency</td>
+            <td>@account.CreationDate</td>
+            <td>
+                <a class="btn btn-success btn-sm" href="/Accounts/@account.Name/edit">Editar</a>   
+                <button class="btn btn-danger btn-sm" @onclick="(() => DeleteAccountBtn(account))">Eliminar</button>
+                <div class="error-message">@errorMessageAcc</div>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<br/>
+
+<h1>
+    Credit Cards List
+    <a href="/Accounts/createCreditCard/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Create +</a>
+</h1>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Bank</th>
+        <th>Last 4 Digits</th>
+        <th>Currency</th>
+        <th>Credit</th>
+        <th>Deadline Date</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var ccard in creditCardsList)
+    {
+        <tr>
+            <td>@ccard.IssuingBank</td>
+            <td>@ccard.Last4Digits</td>
+            <td>@ccard.Currency</td>
+            <td>@ccard.AvaiableCredit</td>
+            <td>@ccard.DeadlineDate</td>
+            <td>
+                <a class="btn btn-success btn-sm" href="/CreditCards/@ccard.Last4Digits/edit">Editar</a>   
+                <button class="btn btn-danger btn-sm" @onclick="(() => DeleteCreditCardBtn(ccard))">Eliminar</button>
+                <div class="error-message">@errorMessageCcard</div>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@code{
+
+    private User? currentUser;
+    private Space? currentSpace;
+    
+    private List<Domain.Account?> accountsList;
+    private List<CreditCard?> creditCardsList;
+    
+    private string errorMessageAcc = "";
+    private string errorMessageCcard = "";
+
+    protected override void OnInitialized()
+    {
+        accountsList = listAccounts();
+        creditCardsList = listCreditCards();
+    }
+
+
+        private void DeleteAccountBtn(Domain.Account? account)
+    {
+        errorMessageAcc = "";
+        if (transactionLogic.GetAllTransactionsFromAccount(account.Name, currentSpace.Id).Count > 0)
+        {
+            errorMessageAcc = "You can't delete an account with transactions";
+        }
+        else
+        {
+            accountLogic.DeleteAccount(account.Id);
+            accountsList = accountLogic.GetAllAccountsFromSpace(currentSpace.Id);
+        }
+    }
+    
+    public void DeleteCreditCardBtn(CreditCard? creditCardDelete)
+    {
+        errorMessageCcard = "";
+        if (transactionLogic.GetAllTransactionsFromCreditCard(creditCardDelete.Last4Digits, currentSpace.Id).Count > 0)
+        {
+            errorMessageCcard = "You can't delete a credit card with transactions";
+        }
+        else
+        {
+            creditCardLogic.DeleteCreditCard(creditCardDelete.Id);
+            creditCardsList = creditCardLogic.GetAllCreditCardsFromSpace(currentSpace.Id);
+        }   
+    }
+
+    private List<Domain.Account?> listAccounts()
+    {
+        currentUser = sessionLogic.GetCurrentUser();
+        currentSpace = sessionLogic.GetCurrentSpace();
+
+        if (currentUser == null || currentSpace == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+
+        return accountLogic.GetAllAccountsFromSpace(currentSpace.Id);
+    }
+    
+    private List<CreditCard?> listCreditCards()
+    {
+        currentUser = sessionLogic.GetCurrentUser();
+        currentSpace = sessionLogic.GetCurrentSpace();
+
+        if (currentUser == null || currentSpace == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+
+        return creditCardLogic.GetAllCreditCardsFromSpace(currentSpace.Id);
+    }
+
+}

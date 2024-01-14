@@ -1,0 +1,58 @@
+﻿@using BusinessLogic
+@using Microsoft.AspNetCore.Mvc.Infrastructure
+@inherits LayoutComponentBase
+
+@inject SessionLogic SessionLogic
+@inject NavigationManager NavigationManager
+
+<PageTitle>FinTrac!</PageTitle>
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu/>
+    </div>
+
+    <main>
+        @if (SessionLogic.IsLogged())
+        {
+            
+            <div class="top-row px-4">
+                <button class="btn btn-outline-success" @onclick="goSpaces">Actual Space: @currentSpace</button>
+                &nbsp;
+                <button class="btn btn-outline-danger" @onclick="update"> Log Out</button>
+            </div>
+        }
+        
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private string? currentSpace = "None";
+    
+    protected override void OnInitialized()
+    {
+        if(SessionLogic.GetCurrentSpace() == null)
+        {
+            currentSpace = "None";
+        }
+        else
+        {
+            currentSpace = SessionLogic.GetCurrentSpace().Name;
+        }
+    }
+    
+    private void update()
+    {
+        SessionLogic.LogOut();
+        NavigationManager.NavigateTo("/", true);
+    }
+
+    private void goSpaces()
+    {
+        NavigationManager.NavigateTo("/spaces", true);
+    }
+}

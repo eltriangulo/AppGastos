@@ -1,0 +1,51 @@
+﻿@page "/reports/create-account-balance-report/"
+
+@using BusinessLogic
+@using Domain
+
+@inject AccountLogic accountLogic
+@inject SessionLogic sessionLogic
+
+
+<h3>Create Account Balance Report</h3>
+<label class="card-text p" for="account">Account:</label>
+<select type="text" for="account" class="form-control" value="@selectedAccount" @onchange="onChangeAccount">
+    <option value ='' disabled selected>Select Account</option>
+    @foreach (var account in Accounts)
+    {
+        <option value="@account.Name">@account.Name</option>
+    }
+</select>
+<button class="btn btn-primary" @onclick="() => returnReport()">Create Report</button>
+<br />
+<br />
+<div>
+    <pre>@reportResult</pre>
+</div>
+
+
+
+@code {
+    private Space? currentSpace;
+    private Account? account;
+    private string selectedAccount;
+    private List<Account?> Accounts = new List<Account?>();
+    private string reportResult = "";
+
+    protected override void OnInitialized()
+    {
+        currentSpace = sessionLogic.GetCurrentSpace(); 
+        Accounts = accountLogic.GetAllAccountsFromSpace(currentSpace.Id);
+    }
+    private void onChangeAccount(ChangeEventArgs e)
+    {
+        selectedAccount = e.Value.ToString();
+        account = accountLogic.GetAccountFromSpaceByName(selectedAccount, currentSpace.Id);
+    }
+    
+    private void returnReport()
+    {
+        if (account.Currency == "USD")
+        reportResult = "Actual Balance: $"+ account.Amount + "\n";
+    }
+}

@@ -1,0 +1,84 @@
+﻿@page "/exchanges/{id:int}/edit/"
+
+<PageTitle>Edit Exchange</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject SessionLogic SessionLogic
+@inject NavigationManager NavigationManager
+@inject ExchangeLogic ExchangeLogic
+
+<div class="card">
+    <div class="card-header">EDIT EXCHANGE</div>
+    <div class="card-body">
+        <label class="card-text p" for="value">Value:</label>
+            <input type="text" for="value" class="form-control" @bind="value">
+        <br/>
+        <div class="error-message">@errorMessage</div>
+        <br/>
+        <button class="btn btn-success" @onclick="SaveChanges">SAVE CHANGES</button>
+        
+        
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+    
+    private decimal value;
+    
+    private Space? currentSpace;
+    private Exchange? exchange;
+    private bool everythigOk = true;
+    private string errorMessage;
+    
+    protected override void OnInitialized()
+    {
+        currentSpace = SessionLogic.GetCurrentSpace();
+        exchange = ExchangeLogic.FindExchangeById(id);
+    }
+
+    public void SaveChanges()
+    {
+        everythigOk = true;
+        errorMessage = "";
+
+        try
+        {
+            exchange.Value = value;
+        }
+        catch (DomainException e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+        
+        if (everythigOk)
+        {
+            ExchangeLogic.UpdateExchange(exchange);
+            NavigationManager.NavigateTo("/exchange/");
+        }
+
+    }
+
+}
+
+
+<style>
+    .error-message {
+            color: red;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+    }
+    
+    button{
+        float: right;
+        align-content: center;
+    }
+    
+    label {
+        font-weight: bold;
+    }
+</style>

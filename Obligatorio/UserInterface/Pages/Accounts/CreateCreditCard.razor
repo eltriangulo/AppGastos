@@ -1,0 +1,159 @@
+﻿@page "/Accounts/createCreditCard/"
+
+<PageTitle>Create Credit Card</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject SessionLogic SessionLogic
+@inject NavigationManager NavigationManager
+@inject CreditCardLogic CreditCardLogic
+
+<div class="card">
+    <div class="card-header">CREATE CREDIT CARD</div>
+    <div class="card-body">
+        <label class="card-text p" for="name">Bank:</label>
+        <input  required type="text" for="name" class="form-control" @bind="bank">
+        <br/>
+        <label class="card-text p" for="last4digits">Last 4 Digits</label>
+        <input  required type="text" for="last4digits" class="form-control" @bind="last4digits">
+        <br/>
+        <label class="card-text p" for="Curency">Currency:</label>
+        <select type="text" for="Curency" class="form-control" @bind="currency" placeholder="UYU">
+            <option value="UYU" selected="selected">UYU</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+        </select>
+        <br/>
+        <label class="card-text p" for="availableCredit">Available Credit:</label>
+        <input type="number" for="availableCredit" class="form-control"  @bind="credit">
+        <br/>
+        <label class="card-text p" for="creationDate">Creation Date:</label>
+        <input type="date" for="creationDate" class="form-control"  @bind="creationDate">
+        <br/>
+        <label class="card-text p" for="deadline">Deadline Date:</label>
+        <input type="date" for="deadline" class="form-control"  @bind="deadlineDate">
+        <div class="error-message">@errorMessage</div>
+        <br/>
+        <button class="btn btn-success" @onclick="CreationCreditCard">CREATE</button>
+    </div>
+</div>
+
+@code {
+    private Space? currentSpace;
+    private User? currentUser;
+    private CreditCard? creditCard;
+    
+    private bool everythigOk = true;
+    private bool nameIsOk = true;
+    private string errorMessage;
+    
+    private string bank = "";
+    private string last4digits = "";
+    private int credit;
+    private string currency = "UYU";
+    private DateTime deadlineDate = DateTime.Now;
+    private DateTime creationDate = DateTime.Now;
+
+    protected override void OnInitialized()
+    {
+        currentSpace = SessionLogic.GetCurrentSpace();
+        currentUser = SessionLogic.GetCurrentUser();
+        
+    }
+
+    public void CreationCreditCard()
+    {
+        everythigOk = true;
+        errorMessage = "";
+        creditCard = new CreditCard();
+
+        try
+        {
+            creditCard.IssuingBank = bank;
+
+        }
+        catch (DomainException e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+
+        try
+        {
+            creditCard.Last4Digits = last4digits;
+        }
+        catch (DomainException e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+
+        try
+        {
+            creditCard.Currency = currency;
+        }
+        catch (DomainException e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+
+        try
+        {
+            creditCard.CreationDate = creationDate;
+        }
+        catch (DomainException e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+        
+        try
+        {
+            creditCard.DeadlineDate = deadlineDate;
+        }
+        catch (DomainException e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+        
+        try
+        {
+            creditCard.AvaiableCredit = credit;
+        }
+        catch (DomainException e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+        creditCard.Space = currentSpace;
+        creditCard.User = currentUser;
+
+        if (everythigOk)
+        {
+            CreditCardLogic.AddCreditCard(creditCard);
+            NavigationManager.NavigateTo("/Accounts");
+        }
+
+    }
+
+}
+
+<style>
+    .error-message {
+            color: red;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+    }
+    
+    button{
+        float: right;
+        align-content: center;
+    }
+    
+    label {
+        font-weight: bold;
+    }
+</style>

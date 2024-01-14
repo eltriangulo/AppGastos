@@ -1,0 +1,63 @@
+﻿@page "/reports/create-income-expenses-report"
+
+@using BusinessLogic
+@using Domain
+
+
+@inject TransactionLogic transactionLogic
+@inject SessionLogic sessionLogic
+
+
+<h3>Create Income Expenses</h3>
+<h5> Select Month </h5>
+<input type="date" @bind="date" />
+<button class="btn btn-primary" @onclick="() => createReport(date)">Create Report</button>
+<br/>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Day</th>
+            @foreach(int day in Enumerable.Range(1, DateTime.DaysInMonth(date.Year, date.Month)))
+            {
+                <th>@day</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+    <tr>
+        Exp.:
+        @foreach (int expense in expenses)
+        {
+            <td>@expense</td>
+        }
+    </tr>
+    <tr>
+        Inc.:
+        @foreach (int income in incomes)
+        {
+            <td>@income</td>
+        }
+    </tr>
+    </tbody>
+</table>
+
+
+
+@code {
+    private Space? currentSpace;
+    private DateTime date = DateTime.Now;
+    private string reportResult = "";
+    private List<int> incomes = new List<int>();
+    private List<int> expenses = new List<int>();
+
+    protected override void OnInitialized()
+    {
+        currentSpace = sessionLogic.GetCurrentSpace();
+    }
+
+    private void createReport(DateTime date)
+    {
+        expenses = transactionLogic.GetExpensesPerDayInMonth(currentSpace.Id, date);
+        incomes = transactionLogic.GetIncomesPerDayInMonth(currentSpace.Id, date);
+    }
+}

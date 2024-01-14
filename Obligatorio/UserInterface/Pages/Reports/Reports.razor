@@ -1,0 +1,173 @@
+﻿@page "/Reports"
+@using BusinessLogic
+@using Domain
+@inject SessionLogic SessionLogic
+@inject TransactionLogic TransactionLogic
+@inject CategoryLogic CategoryLogic
+@inject AccountLogic AccountLogic
+@inject CreditCardLogic CreditCardLogic
+
+<PageTitle> Reports </PageTitle>
+
+<h3>
+    Spending Goals Report
+    <a href="/reports/create-spending-goals-report/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Generate Report +</a>
+</h3>
+<hr/>
+<h3>
+    Category Spending Report
+    <a href="/reports/create-category-spending-report/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Generate Report +</a>
+</h3>
+<hr/>
+<h3>
+    Credit Card Spending Report
+    <a href="/reports/create-credit-card-spending-report/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Generate Report +</a>
+</h3>
+<hr/>
+<h3>
+    Account Balance Report
+    <a href="/reports/create-account-balance-report/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Generate Report +</a>
+</h3>
+<hr/>
+<h3>
+    Income and Expense Report
+    <a href="/reports/create-income-expenses-report"
+       class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Generate Report +</a>
+</h3>
+<hr/>
+<h3>
+    Spending List
+</h3>
+<div>
+    <label for="filter">Filter:</label>
+    <select type="text" for="Category" class="form-control" value="@selectedCategoryName" @onchange="onChangeCategory">
+        <option value =''disabled selected>Select Category</option>
+        @foreach (var c in categories)
+        {
+            <option value="@c.Name">@c.Name</option>
+        }
+    </select>
+    <select type="text" for="account" class="form-control" value="@selectedAccountName" @onchange="onChangeAccount">
+        <option value =''disabled selected>Select Account</option>
+        @foreach (var a in accounts)
+        {
+            <option value="@a.Name">@a.Name</option>
+        }
+    </select>
+    <select type="text" for="account" class="form-control" value="@selectedCreditCardDigits" @onchange="onChangeCC">
+        <option value ='' disabled selected>Select Credit Card</option>
+        @foreach (var cc in creditCards)
+        {
+            <option value="@cc.Last4Digits">@cc.IssuingBank ended in @cc.Last4Digits</option>
+        }
+    </select>
+    <label>Select the date range</label>
+    <input type="date" for="date" class="form-control" @bind-value="firstDate" />
+    <input type="date" for="date" class="form-control" @bind-value="secondDate" />
+</div>
+<button id="typeButton" class="btn btn-primary" @onclick="FilterByCategory">Filter By Category</button>
+<button id="typeButton3" class="btn btn-primary" @onclick="FilterByAccount">Filter By Account</button>
+<button id="typeButton4" class="btn btn-primary" @onclick="FilterByCreditCard">Filter By Credit Card</button>
+<button id="typeButton2" class="btn btn-primary" @onclick="FilterByDateRange">Filter By Date Range</button>
+<br/>
+<div class="error-message">@errorMessage</div>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Account or Credit Card</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var expense in expensesFromSpace)
+    {
+        <tr>
+            <td>@expense.Title</td>
+            <td>@expense.Date</td>
+            <td>@expense.Category.Name</td>
+            @if (expense.Account != null)
+            {
+                <td>@expense.Account.Name</td>
+            }
+            else
+            {
+                <td>@expense.CreditCard.IssuingBank ended in @expense.CreditCard.Last4Digits</td>
+            }
+        </tr>
+    }
+    </tbody>
+</table>
+
+
+@code {
+    
+    private List<Transaction> expensesFromSpace = new List<Transaction>();
+    private List<Category> categories = new List<Category>();
+    private string errorMessage = "";
+    private string selectedCategoryName = "";
+    private string selectedAccountName = "";
+    private string selectedCreditCardDigits = "";
+    private DateTime firstDate = DateTime.Now;
+    private DateTime secondDate = DateTime.Now;
+    private List<Account?> accounts = new List<Account?>();
+    private List<CreditCard?> creditCards = new List<CreditCard?>();
+    private Space currentSpace;
+    private Category _category;
+    private Account? _account;
+    private CreditCard? _creditCard;
+
+    protected override void OnInitialized()
+    {
+        currentSpace = SessionLogic.GetCurrentSpace();
+        expensesFromSpace = TransactionLogic.GetAllExpensesFromSpace(currentSpace.Id);
+        categories = CategoryLogic.GetAllCategoriesFromSpace(currentSpace.Id);
+        accounts = AccountLogic.GetAllAccountsFromSpace(currentSpace.Id);
+        creditCards = CreditCardLogic.GetAllCreditCardsFromSpace(currentSpace.Id);
+    }
+
+    public void onChangeCategory(ChangeEventArgs e)
+    {
+        selectedCategoryName = e.Value.ToString();
+        _category = CategoryLogic.GetCategoryFromSpaceByName(selectedCategoryName, currentSpace.Id);
+    }
+    public void onChangeAccount(ChangeEventArgs e)
+    {
+        selectedAccountName = e.Value.ToString();
+        _account = AccountLogic.GetAccountFromSpaceByName(selectedAccountName, currentSpace.Id);
+    }
+
+    public void onChangeCC(ChangeEventArgs e)
+    {
+        selectedCreditCardDigits = e.Value.ToString();
+        _creditCard = CreditCardLogic.GetCreditCard(currentSpace.Id, selectedCreditCardDigits);
+    }
+
+    public void FilterByCategory()
+    {
+        if(_category != null)
+            expensesFromSpace = TransactionLogic.GetAllExpensesByCategoryFromSpace(currentSpace.Id, _category.Name);
+    }
+    public void FilterByAccount()
+    {
+        if(_account != null)
+            expensesFromSpace = TransactionLogic.GetAllExpensesByAccountFromSpace(currentSpace.Id, _account.Name);
+    }
+    public void FilterByCreditCard()
+    {
+        if(_creditCard != null)
+            expensesFromSpace = TransactionLogic.GetExpensesFromCreditCard(currentSpace.Id, _creditCard.Last4Digits);
+    }
+    public void FilterByDateRange()
+    {
+        if(firstDate > secondDate)
+        {
+            errorMessage = "The first date must be before the second date";
+            return;
+        }
+        expensesFromSpace = TransactionLogic.GetAllExpensesIntoDateRange(currentSpace.Id, firstDate, secondDate);
+    }
+}

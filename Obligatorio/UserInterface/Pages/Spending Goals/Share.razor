@@ -1,0 +1,27 @@
+﻿@page "/spendingGoals/{id:int}"
+@using BusinessLogic
+
+@inject NavigationManager NavigationManager
+@inject SpendingGoalsLogic SpendingGoalsLogic
+@inject TransactionLogic TransactionLogic
+
+<h3>@spendingGoal.Title</h3>
+<h3>Category: @SpendingGoalsLogic.ReturnCategories(spendingGoal)</h3>
+<h3>Goal Amount: Spent less than $@spendingGoal.MonthlyBudget</h3>
+<h3>Current Amount: $@TransactionLogic.GetTotalSpentFromCategoriesGoal(spendingGoal)</h3>
+
+
+@code {
+    [Parameter] public int Id { get; set; }
+    
+    private Domain.SpendingGoals spendingGoal;
+
+    protected override void OnInitialized()
+    {
+        spendingGoal = SpendingGoalsLogic.GetSpendingGoalsById(Id);
+        if (spendingGoal == null || spendingGoal.isShared == false)
+        {
+            NavigationManager.NavigateTo("/404");
+        }
+    }
+}

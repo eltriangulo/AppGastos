@@ -1,0 +1,127 @@
+﻿@page "/categories/create/"
+
+<PageTitle>Create Category</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject SessionLogic SessionLogic
+@inject NavigationManager NavigationManager
+@inject CategoryLogic CategoryLogic
+
+<div class="card">
+    <div class="card-header">CREATE CATEGORY</div>
+    <div class="card-body">
+        <label class="card-text p" for="name">Name:</label>
+        <input type="text" for="name" class="form-control" @bind="name">
+        <br/>
+        <label class="card-text p" for="date">Date:</label>
+        <input type="date" for="date" class="form-control"  @bind="date">
+        <br/>
+        <label class="card-text p" for="status">Status:</label>
+        <select type="text" for="status" class="form-control" @bind="status">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+        </select>
+        <br/>
+        <label class="card-text p" for="type">Type:</label>
+        <select type="text" for="type" class="form-control" @bind="type">
+            <option value="Income">Income</option>
+            <option value="Expenses">Expenses</option>
+        </select>
+        <div class="error-message">@errorMessage</div>
+        <br/>
+        <button class="btn btn-success" @onclick="CreationCategory">CREATE</button>
+    </div>
+</div>
+
+@code {
+    private Space? currentSpace;
+    private User? currentUser;
+    private Category? category;
+    
+    private bool everythigOk = true;
+    private string errorMessage;
+
+    private string name = "";
+    private DateTime date = DateTime.Now;
+    private string status = "";
+    private string type = "";
+
+    protected override void OnInitialized()
+    {
+        currentSpace = SessionLogic.GetCurrentSpace();
+        currentUser = SessionLogic.GetCurrentUser();
+        
+    }
+
+    public void CreationCategory()
+    {
+        everythigOk = true;
+        category = new Category();
+        try
+        {
+            category.Name = name;
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+        try
+        {
+            category.CreationDate = date;
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+        try
+        {
+            category.Status = status;
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+        try
+        {
+            category.Type = type;
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+
+        category.Space = currentSpace;
+        category.User = currentUser;
+
+        if (everythigOk)
+        {
+            CategoryLogic.AddCategory(category);
+            NavigationManager.NavigateTo("/categories");
+        }
+
+    }
+
+}
+
+<style>
+    .error-message {
+            color: red;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+    }
+    
+    button{
+        float: right;
+        align-content: center;
+    }
+    
+    label {
+        font-weight: bold;
+    }
+</style>

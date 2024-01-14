@@ -1,0 +1,55 @@
+﻿@page "/reports/create-credit-card-spending-report"
+
+@using BusinessLogic
+@using Domain
+
+@inject CreditCardLogic creditCardLogic
+@inject TransactionLogic transactionLogic
+@inject SessionLogic sessionLogic
+
+
+<h3>Create Report Expenses From Credit Card</h3>
+<h5> Select Credit Card: </h5>
+<select type="text" for="CreditCard" class="form-control" value="@cCard" @onchange="onChangeCCard">
+    <option value ='' disabled selected>Select Credit Card</option>
+    @foreach (var card in cCards)
+    {
+        <option value="@card.Last4Digits">@card.IssuingBank @card.Last4Digits</option>
+    }
+</select>
+<button class="btn btn-primary" @onclick="() => returnReport(cCard)">Create Report</button>
+<br />
+<br />
+<div>
+    <pre>@reportResult</pre>
+</div>
+
+
+
+@code {
+    private Space? currentSpace;
+    private CreditCard? cCard;
+    private DateTime actualDate = DateTime.Now;
+    private List<CreditCard?> cCards = new List<CreditCard?>();
+    private string reportResult = "";
+
+    protected override void OnInitialized()
+    {
+        currentSpace = sessionLogic.GetCurrentSpace(); 
+        cCards = creditCardLogic.GetAllCreditCardsFromSpace(currentSpace.Id);
+    }
+    private void onChangeCCard(ChangeEventArgs e)
+    {
+        cCard = creditCardLogic.GetCreditCard(currentSpace.Id, e.Value.ToString());
+    }
+    
+    private void returnReport(CreditCard? cCard)
+    {
+        reportResult = "";
+        List<Transaction> expenses = transactionLogic.GetExpensesIntoDeadlineDate(currentSpace.Id, actualDate, cCard.Last4Digits);
+        foreach (Transaction expense in expenses)
+        {
+            reportResult += expense.Title +"Amount " + expense.Currency + expense.Amount +"   Date:"+  expense.Date + "\n";
+        }
+    }
+}

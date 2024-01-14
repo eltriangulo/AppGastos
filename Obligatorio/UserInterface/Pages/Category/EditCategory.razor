@@ -1,0 +1,102 @@
+﻿@page "/categories/{name}/edit/"
+
+<PageTitle>Edit Category</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject SessionLogic SessionLogic
+@inject NavigationManager NavigationManager
+@inject CategoryLogic CategoryLogic
+
+<div class="card">
+    <div class="card-header">EDIT CATEGORY</div>
+    <div class="card-body">
+        <label class="card-text p" for="name">Name:</label>
+            <input type="text" for="name" class="form-control" placeholder="@category.Name" @bind="name">
+        <br/>
+        <label class="card-text p" for="date">Date:</label>
+        <input readonly type="date" for="date" class="form-control" placeholder="@category.CreationDate">
+        <br/>
+        <label class="card-text p" for="status">Status:</label>
+        <select type="text" for="status" class="form-control"  placeholder="@category.Status" @bind="status">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+        </select>
+        <br/>
+        <label class="card-text p" for="type">Type:</label>
+        <select readonly for="type" class="form-control" placeholder="@category.Type" >
+            
+        </select>
+        <div class="error-message">@errorMessage</div>
+        <br/>
+        <button class="btn btn-success" @onclick="SaveChanges">SAVE CHANGES</button>
+        
+        
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string name { get; set; }
+    
+    private Space? currentSpace;
+    private Category? category;
+    private bool everythigOk = true;
+    private string errorMessage;
+    
+
+    private string status = "Active";
+
+
+    protected override void OnInitialized()
+    {
+        currentSpace = SessionLogic.GetCurrentSpace();
+        category = CategoryLogic.GetCategoryFromSpaceByName(name, currentSpace.Id);
+    }
+
+    public void SaveChanges()
+    {
+        everythigOk = true;
+        errorMessage = "";
+
+        try
+        {
+            category.Name = name;
+            category.Status = status;
+        }
+        catch (Exception e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+        category.Space = currentSpace;
+        
+        if (everythigOk)
+        {
+            CategoryLogic.UpdateCategory(category);
+
+            NavigationManager.NavigateTo("/categories");
+        }
+
+    }
+
+}
+
+
+<style>
+    .error-message {
+            color: red;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+    }
+    
+    button{
+        float: right;
+        align-content: center;
+    }
+    
+    label {
+        font-weight: bold;
+    }
+</style>

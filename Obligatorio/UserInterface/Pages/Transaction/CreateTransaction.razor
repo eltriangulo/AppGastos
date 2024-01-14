@@ -1,0 +1,401 @@
+﻿@page "/transaction/create/"
+
+<PageTitle>Create Transaction</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject SessionLogic SessionLogic
+@inject NavigationManager NavigationManager
+@inject TransactionLogic TransactionLogic
+@inject ExchangeLogic ExchangeLogic
+@inject CreditCardLogic CreditCardLogic
+@inject CategoryLogic CategoryLogic
+@inject AccountLogic AccountLogic
+
+<div class="card">
+    <div class="card-header">CREATE TRANSACTION</div>
+    <div class="card-body">
+        <label class="card-text p" for="title">Title:</label>
+        <input type="text" for="title" class="form-control" @bind="title">
+        <br/>
+        <label class="card-text p" for="date">Date:</label>
+        <input type="date" for="date" class="form-control"  @bind="date">
+        <br/>
+        <label class="card-text p" for="Amount">Amount:</label>
+        <input type="number" for="Amount" class="form-control" @bind="amount">
+        <br/>
+        <label class="card-text p" for="Curency">Currency:</label>
+        <select type="text" for="Curency" class="form-control" @bind="currency">
+            <option value="UYU">UYU</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+        </select>
+        <br/>
+        <label class="card-text p" for="Category">Category:</label>
+        <select type="text" for="Category" class="form-control" value="@selectedCategoryName" @onchange="onChangeCategory">
+            <option value =''disabled selected>Select Category</option>
+            @foreach (var c in categories)
+            {
+                <option value="@c.Name">@c.Name</option>
+            }
+        </select>
+        <br/>
+        <div>
+            <button id="typeButton" class="btn btn-primary" @onclick="ToggleCreditCardForm">For Credit Card</button>
+            <button id="typeButton" class="btn btn-primary" @onclick="ToggleAccountForm">For Normal Account</button>
+        </div>
+        @if(showAccountForm){
+            <label class="card-text p" for="Account">Account:</label>
+            <select type="text" for="Account" class="form-control" value="@selectedAccountName" @onchange="onChangeAccount">
+                <option value ='' disabled selected>Select Account</option>
+                @foreach (var a in accounts)
+                {
+                    <option value="@a.Name">@a.Name</option>
+                }
+            </select>
+        }
+        else{
+            <label class="card-text p" for="CreditCard">Credit Card:</label>
+            <select type="text" for="CreditCard" class="form-control" value="@selectedLastDigits" @onchange="onChangeCCard">
+                <option value ='' disabled selected>Select Credit Card</option>
+                @foreach (var card in cCards)
+                {
+                    <option value="@card.Last4Digits">@card.IssuingBank @card.Last4Digits</option>
+                }
+            </select>
+        }
+        <div class="error-message">@errorMessage</div>
+        <br/>
+        <button class="btn btn-success" @onclick="CreationTransaction">CREATE</button>
+    </div>
+</div>
+
+@code {
+    private Space? currentSpace;
+    private Transaction transaction = new Transaction();
+
+    private List<Category> categories;
+    private List<Account?> accounts;
+    private List<CreditCard?> cCards;
+
+    private string selectedCategoryName;
+    private string selectedAccountName;
+    private string selectedLastDigits;
+
+    private bool everythigOk = true;
+    private string errorMessage;
+
+    private string title = "";
+    private DateTime date = DateTime.Now;
+    private decimal amount;
+    private string currency = "UYU";
+
+    private Exchange? ex;
+    private Exchange? exAccount;
+
+    private bool showAccountForm = true; 
+
+    public void ToggleAccountForm()
+    {
+        showAccountForm = true; 
+    }
+
+    public void ToggleCreditCardForm()
+    {
+        showAccountForm = false;
+    }
+
+    protected override void OnInitialized()
+    {
+        currentSpace = SessionLogic.GetCurrentSpace();
+        categories = CategoryLogic.GetAllCategoriesFromSpace(currentSpace.Id);
+        accounts = AccountLogic.GetAllAccountsFromSpace(currentSpace.Id);
+        cCards = CreditCardLogic.GetAllCreditCardsFromSpace(currentSpace.Id);
+    }
+
+    public void onChangeCategory(ChangeEventArgs e)
+    {
+        selectedCategoryName = e.Value.ToString();
+        transaction.Category = CategoryLogic.GetCategoryFromSpaceByName(selectedCategoryName, currentSpace.Id);
+    }
+
+    public void onChangeAccount(ChangeEventArgs e)
+    {
+        selectedAccountName = e.Value.ToString();
+        transaction.Account = AccountLogic.GetAccountFromSpaceByName(selectedAccountName, currentSpace.Id);
+        transaction.CreditCard = null;
+    }
+
+    public void onChangeCCard(ChangeEventArgs e)
+    {
+        selectedLastDigits = e.Value.ToString();
+        transaction.CreditCard = CreditCardLogic.GetCreditCard(currentSpace.Id, selectedLastDigits);
+        transaction.Account = null;
+    }
+
+    public void CheckExistBothExchange() 
+    {
+            ex = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, currency);
+            
+            if(transaction.Account != null)
+            exAccount = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, transaction.Account.Currency);
+            else exAccount = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, transaction.CreditCard.Currency);
+        
+            if (ex == null)
+            {
+                errorMessage = "This date has no " + currency + " Value assigned";
+                everythigOk = false;
+            }
+            else if (transaction.Account != null && exAccount == null)
+            {
+                errorMessage = "This date has no " + transaction.Account.Currency + " Value assigned";
+                everythigOk = false;
+            }
+            else if (transaction.CreditCard != null && exAccount == null)
+            {
+                errorMessage = "This date has no " + transaction.CreditCard.Currency + " Value assigned";
+                everythigOk = false;
+            }
+        }
+    public void CheckExistAccountExchange(){
+        if(transaction.Account != null)
+        exAccount = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, transaction.Account.Currency);
+        else exAccount = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, transaction.CreditCard.Currency);
+        
+        if (exAccount == null)
+        {
+            errorMessage = "This date has no " + transaction.Account.Currency + " Value assigned";
+            everythigOk = false;
+        }
+    }
+
+    public void CheckExistTransactionExchange() 
+    {
+        ex = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, currency);
+        if (ex == null)
+        {
+            errorMessage = "This date has no " + currency + " Value assigned";
+            everythigOk = false;
+        }
+    }
+    
+    
+    public void assignAmountAccount()
+    {
+        if (currency == "UYU")
+        {
+            if(transaction.Account.Currency != "UYU") 
+            {
+                exAccount = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, transaction.Account.Currency);
+                transaction.Exchange = exAccount;
+                amount /= exAccount.Value;
+            }
+            else transaction.Exchange = null;   
+        }
+        else 
+        {
+            if(transaction.Account.Currency == "UYU") 
+            {
+                transaction.Exchange = ex;
+                amount *= ex.Value;
+            }
+            else 
+            {
+                transaction.Exchange = ex;
+                exAccount = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, transaction.Account.Currency);
+                amount *= ex.Value;
+                amount /= exAccount.Value;
+            }
+        }
+    }
+    public void assignAmountCreditCard()
+    {
+        if (currency == "UYU")
+        {
+            if(transaction.CreditCard.Currency != "UYU") 
+            {
+                exAccount = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, transaction.CreditCard.Currency);
+                transaction.Exchange = exAccount;
+                amount /= exAccount.Value;
+            }
+            else transaction.Exchange = null;  
+        }
+        else 
+        {
+            if(transaction.CreditCard.Currency == "UYU") 
+            {
+                transaction.Exchange = ex;
+                amount *= ex.Value;
+            }
+            else 
+            {
+                transaction.Exchange = ex;
+                exAccount = ExchangeLogic.FindExchangeByDateFromSpace(date, currentSpace.Id, transaction.CreditCard.Currency);
+                amount *= ex.Value;
+                amount /= exAccount.Value;
+            }
+        }
+    }
+
+    public void ExchangeOperation()
+    {
+        if (currency == "UYU")
+        {
+            if (transaction.Account != null && transaction.Account.Currency != "UYU")
+            {
+                CheckExistAccountExchange();
+            }else{
+                if(transaction.CreditCard != null && transaction.CreditCard.Currency != "UYU") 
+                {
+                    CheckExistAccountExchange();
+                }
+                else 
+                {
+                    everythigOk = true;
+                }
+            }
+            
+        }
+        else
+        {
+            if(transaction.Account != null && transaction.Account.Currency == "UYU") 
+            {
+                CheckExistTransactionExchange();
+            }
+            else
+            {
+                if(transaction.CreditCard != null && transaction.CreditCard.Currency == "UYU") 
+                {
+                    CheckExistTransactionExchange();
+                }
+                else 
+                {
+                    CheckExistBothExchange();
+                }
+            }
+        }
+    }
+
+    public void CreationTransaction()
+{
+    everythigOk = true;
+    errorMessage = "";
+    try
+    {
+        transaction.Title = title;
+    }
+    catch (DomainException e)
+    {
+        errorMessage = e.Message;
+        everythigOk = false;
+    }
+        try
+        {
+            transaction.Amount = amount;
+        }
+        catch (DomainException e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+    transaction.Date = date;
+    transaction.Currency = currency;
+    if (transaction.Account == null && transaction.CreditCard == null)
+    {
+        everythigOk = false;
+        errorMessage = "Account or Credit Card is not selected";
+    }
+    else
+    {
+        if (showAccountForm)
+        {
+            transaction.Account = AccountLogic.GetAccountFromSpaceByName(selectedAccountName, currentSpace.Id);
+        }
+        else
+        {
+            transaction.CreditCard = CreditCardLogic.GetCreditCard(currentSpace.Id, selectedLastDigits);
+        }
+        
+        ExchangeOperation();
+        
+        if(everythigOk){
+            if(transaction.Account != null)
+            assignAmountAccount();
+            else assignAmountCreditCard();
+    }
+        
+        transaction.Category = CategoryLogic.GetCategoryFromSpaceByName(selectedCategoryName, currentSpace.Id);
+
+        if (transaction.Category == null)
+        {
+            everythigOk = false;
+            errorMessage = "Category is not selected";
+        }
+        else
+        {
+            if (!transaction.Category.IsActiveCategory())
+            {
+                everythigOk = false;
+                errorMessage = "Category is not active";
+            }
+            else
+            {
+                try
+                {
+                    if (showAccountForm)
+                    {
+                        AccountLogic.UpdateAccountAmount(transaction.Account, amount, transaction.Category);
+                    }
+                    else
+                    {
+                        if (transaction.CreditCard != null)
+                        {
+                            CreditCardLogic.UpdateCreditCardAmount(transaction.CreditCard, amount, transaction.Category);
+                        }
+                        else
+                        {
+                            errorMessage = "Credit Card is not selected";
+                            everythigOk = false;
+                        }
+                    }
+                }
+                catch (DomainException e)
+                {
+                    errorMessage = e.Message;
+                    everythigOk = false;
+                }
+                transaction.Space = currentSpace;
+            }
+        }
+    }
+    if (everythigOk)
+    {
+        TransactionLogic.AddTransaction(transaction);
+        NavigationManager.NavigateTo("/transactions");
+    }
+}
+
+
+}
+<style>
+    .error-message {
+            color: red;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+    }
+    
+    #typeButton{
+        margin-bottom: 10px;
+        margin-right: 10px;
+    }
+    
+    button{
+        float: right;
+        align-content: center;
+    }
+    
+    label {
+        font-weight: bold;
+    }
+</style>

@@ -1,0 +1,93 @@
+﻿@page "/EditProfile"
+
+<PageTitle>Profile</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject SessionLogic SessionLogic
+@inject NavigationManager NavigationManager
+@inject UserLogic UserLogic
+
+<div class="card">
+    <div class="card-header">EDIT PROFILE</div>
+    <div class="card-body">
+        <label class="card-text p" for="name">Name:</label>
+        <input type="text" for="name" class="form-control" placeholder="@currentUser.Name" @bind="name">
+        <br/>
+        <label class="card-text p" for="surname">Surname:</label>
+        <input type="text" for="surname" class="form-control" placeholder="@currentUser.Surname" @bind="surname">
+        <br/>
+        <label class="card-text p" for="address">Address:</label>
+        <input type="text" for="address" class="form-control" placeholder="@currentUser.Address" @bind="address">
+        <br/>
+        <label class="card-text p" for="password">Password:</label>
+        <input type="password" for="password" class="form-control" @bind="password">
+        <div class="error-message">@errorMessage</div>
+        <br/>
+        <button class="btn btn-success" @onclick="saveChanges">SAVE CHANGES</button>
+        
+        
+    </div>
+</div>
+
+@code
+{
+    private User? currentUser;
+    private bool everythigOk = true;
+    private string errorMessage;
+    
+    private string name = "";
+    private string surname = "";
+    private string address = "";
+    private string password = "";
+    
+    protected override void OnInitialized()
+    {
+        currentUser = SessionLogic.GetCurrentUser();
+    }
+    
+    public void saveChanges()
+    {
+        
+        errorMessage = "";
+        everythigOk = true;
+
+        try
+        {
+            UserLogic.PasswordFormatOk(password);
+        }
+        catch (LogicException e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+
+
+        if (everythigOk)
+        {
+            currentUser.Name = name;
+            currentUser.Surname = surname;
+            currentUser.Address = address;
+            currentUser.SetPassword(password);
+            UserLogic.UpdateUser(currentUser);
+            NavigationManager.NavigateTo("/Profile");
+        }
+    }
+}
+<style>
+    .error-message {
+            color: red;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+    }
+    
+    button{
+        float: right;
+        align-content: center;
+    }
+    
+    label {
+        font-weight: bold;
+    }
+</style>

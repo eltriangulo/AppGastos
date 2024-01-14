@@ -1,0 +1,45 @@
+﻿@page "/reports/create-category-spending-report"
+
+@using BusinessLogic
+@using Domain
+
+@inject CategoryLogic categoryLogic
+@inject TransactionLogic transactionLogic
+@inject SessionLogic sessionLogic
+@inject NavigationManager NavigationManager
+
+
+<h3>Create Report For Category In Month</h3>
+<h5> Select Date </h5>
+<input type="date" @bind="date" />
+<button class="btn btn-primary" @onclick="() => returnReport(date)">Create Report</button>
+<br />
+<div>
+    <pre>@reportResult</pre>
+</div>
+
+
+
+@code {
+    private Space? currentSpace;
+    private DateTime date = DateTime.Now;
+    private string reportResult = "";
+
+    protected override void OnInitialized()
+    {
+        currentSpace = sessionLogic.GetCurrentSpace(); 
+    }
+    
+    private void returnReport(DateTime date)
+    {
+        reportResult = "";
+        List<Category> categories = transactionLogic.GetCategoriesWithTransactionsInThatMonth(currentSpace.Id, date);
+        decimal totalSpent = transactionLogic.GetTotalSpentInMonth(currentSpace.Id, date);
+        foreach (Category category in categories)
+        {
+            var totalSpentFromCategory = transactionLogic.GetTotalSpentFromCategoryInMonth(category.Name, currentSpace.Id, date);
+            var percentage = totalSpentFromCategory / totalSpent * 100;
+            reportResult += "-" + category.Name + ": " + totalSpentFromCategory  + " => " + percentage + "%" + "\n";
+        }
+    }
+}

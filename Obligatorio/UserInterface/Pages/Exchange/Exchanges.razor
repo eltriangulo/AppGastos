@@ -1,0 +1,76 @@
+﻿@page "/Exchanges"
+
+<PageTitle>Exchanges List</PageTitle>
+
+@using BusinessLogic
+@using Domain
+
+@inject ExchangeLogic exchangeLogic
+@inject SessionLogic sessionLogic
+@inject NavigationManager NavigationManager
+
+<h1>
+    Exchanges List
+    <a href="/Exchanges/create/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Create +</a>
+</h1>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Value</th>
+        <th>Date</th>
+        <th>Currency</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+   
+    @foreach (var exchange in _exchanges)
+    {
+        <tr>
+            <td>@exchange.Value</td>
+            <td>@exchange.Date</td>
+            <td>@exchange.Currency</td>
+            <td>
+                <a class="btn btn-success btn-sm" href="/exchanges/@exchange.Id/edit">Editar</a>   
+                <button class="btn btn-danger btn-sm" @onclick="(() => DeleteExchange(exchange))">Eliminar</button>
+            </td>
+        </tr>
+      
+    }
+    </tbody>
+</table>
+
+@code{
+
+    private User? currentUser;
+    private Space? currentSpace;
+
+    private List<Exchange?> _exchanges = new List<Exchange?>();
+
+    protected override void OnInitialized()
+    {
+        _exchanges = getExchanges();
+    }
+
+
+    private void DeleteExchange(Exchange? exchange)
+    {
+        exchangeLogic.DeleteExchange(exchange.Id);
+        _exchanges = getExchanges();
+    }
+
+    private List<Exchange?> getExchanges()
+    {
+        currentUser = sessionLogic.GetCurrentUser();
+        currentSpace = sessionLogic.GetCurrentSpace();
+
+        if (currentUser == null || currentSpace == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+
+        return exchangeLogic.GetExchangesFromSpace(currentSpace.Id);
+    }
+
+}

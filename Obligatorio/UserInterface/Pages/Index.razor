@@ -1,0 +1,25 @@
+﻿@page "/"
+@using BusinessLogic
+@inject NavigationManager NavigationManager
+@inject SessionLogic SessionLogic
+@inject LogInLogic LogInLogic
+
+<PageTitle>FinTrac</PageTitle>
+
+
+<h1>Welcome to FinTrac!</h1>
+
+@code
+{
+    private Domain.User? currentUser;
+    
+    protected override void OnInitialized()
+    {
+        
+        if (!SessionLogic.IsLogged())
+        {
+            NavigationManager.NavigateTo("/LogIn");
+        }
+    }
+    
+}

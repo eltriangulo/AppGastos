@@ -1,0 +1,100 @@
+﻿@page "/Transactions"
+
+<PageTitle>Transactions List</PageTitle>
+
+@using BusinessLogic
+@using Domain
+
+@inject TransactionLogic transactionLogic
+@inject SessionLogic sessionLogic
+@inject AccountLogic accountLogic
+@inject CreditCardLogic creditCardLogic
+@inject NavigationManager NavigationManager
+
+
+
+<h1>
+    Transactions List
+    <a href="/transaction/create/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Create +</a>
+</h1>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Creation Date</th>
+        <th>Amount</th>
+        <th>Currency</th>
+        <th>Category</th>
+        <th>Account or Credit Card</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+   
+    @foreach (var transaction in transactionsList())
+    {
+        <tr>
+            <td>@transaction.Title</td>
+            <td>@transaction.Date</td>
+            <td>@transaction.Amount</td>
+            <td>@transaction.Currency</td>
+            <td>@transaction.Category.Name</td>
+            @if(@transaction.Account == null)
+            {
+                <td>@transaction.CreditCard.IssuingBank ended in @transaction.CreditCard.Last4Digits</td>
+            }
+            else
+            {
+                <td>@transaction.Account.Name</td>
+            }
+            <td>
+                <a class="btn btn-success btn-sm" href="/transaction/@transaction.Id/edit">Editar</a>   
+                <button class="btn btn-primary" @onclick="() => duplicateTransaction(transaction)">Duplicate</button>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@code{
+
+    private User? currentUser;
+    private Space? currentSpace;
+
+    private List<Transaction> _transactions = new List<Transaction>();
+
+    protected override void OnInitialized()
+    {
+        _transactions = transactionsList();
+    }
+    
+    private List<Transaction> transactionsList()
+    {
+        currentUser = sessionLogic.GetCurrentUser();
+        currentSpace = sessionLogic.GetCurrentSpace();
+
+        if (currentUser == null || currentSpace == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+
+        return transactionLogic.GetAllTransactionsFromSpace(currentSpace.Id);
+    }
+
+    private void duplicateTransaction(Transaction transaction)
+    {
+        transactionLogic.DuplicateTransaction(transaction);
+        if (transaction.Account == null)
+        {
+            creditCardLogic.UpdateCreditCardAmount(transaction.CreditCard, transaction.Amount, transaction.Category);
+        }
+        else
+        {
+            accountLogic.UpdateAccountAmount(transaction.Account, transaction.Amount, transaction.Category);
+            
+        }
+        NavigationManager.NavigateTo("/Transactions");
+    }
+    
+}

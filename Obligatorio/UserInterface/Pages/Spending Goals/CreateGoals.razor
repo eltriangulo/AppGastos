@@ -1,0 +1,131 @@
+﻿    @page "/SpendingGoals/create/"
+
+<PageTitle>Spending Goals Category</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject SessionLogic SessionLogic
+@inject CategoryLogic CategoryLogic
+@inject NavigationManager NavigationManager
+@inject SpendingGoalsLogic SpendingGoalsLogic
+
+<div class="card">
+    <div class="card-header">CREATE SPENDING GOAL</div>
+    <div class="card-body">
+        <label class="card-text p" for="title">Title:</label>
+        <input type="text" for="title" class="form-control" @bind="title">
+        <br/>
+        <label class="card-text p" for="monthlyBudget">Monthly Budget:</label>
+        <input type="number" for="monthlyBudget" class="form-control"  @bind="monthlyBudget">
+        <br/>
+        <label class="card-text p" for="categories">Categories:</label>
+        <select type="text" for="categories" class="form-control" value="@selectedCategory" @onchange="@getSelectedCategory">
+          <option disabled value ="" selected>Select Categories</option>
+          @foreach (var category in categories)
+          {
+            <option value="@category.Name">@category.Name</option>
+          }
+        </select>
+          <button class="btn btn-success" @onclick="@addCategoryGoal">ADD CATEGORY</button>
+        <div>
+            @ActualCategories
+        </div>
+        
+        <br/>
+        <div class="error-message">@errorMessage</div>
+        <br/>
+        <button class="btn btn-success" @onclick="CreationGoal">CREATE</button>
+    </div>
+</div>
+
+@code {
+    private Space? currentSpace;
+    private Domain.SpendingGoals? goal;
+
+    private bool everythigOk = true;
+    private string errorMessage;
+    private string name;
+
+    private string title = "";
+    private decimal monthlyBudget;
+    private List<Category> categories = new List<Category>();
+
+    private List<Category> selectedCategories = new List<Category>();
+    private Category selectedCategory;
+    private string ActualCategories;
+
+    protected override void OnInitialized()
+    {
+        currentSpace = SessionLogic.GetCurrentSpace();
+        categories = CategoryLogic.GetAllCategoriesFromSpace(currentSpace.Id);
+    }
+
+    public void addCategoryGoal()
+    {
+        selectedCategory = CategoryLogic.GetCategoryFromSpaceByName(name, currentSpace.Id);
+        selectedCategories.Add(selectedCategory);
+        ActualCategories += selectedCategory.Name + ", ";
+    }
+
+    public void getSelectedCategory(ChangeEventArgs e)
+    {
+        name = e.Value.ToString();
+    }
+
+    public void CreationGoal()
+    {
+        everythigOk = true;
+        goal = new Domain.SpendingGoals();
+
+        try
+        {
+            goal.Title = title;
+        }
+        catch (DomainException e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+        try
+        {
+            goal.MonthlyBudget = monthlyBudget;
+        }
+        catch (DomainException e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+
+        goal.Space = currentSpace;
+        goal.isShared = false;
+
+        if (everythigOk)
+        {
+            goal.Categories = selectedCategories;
+            SpendingGoalsLogic.AddSpendingGoals(goal);
+            NavigationManager.NavigateTo("/SpendingGoals");
+        }
+
+
+    }
+
+}
+
+
+<style>
+    .error-message {
+            color: red;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+    }
+    
+    button{
+        float: right;
+        align-content: center;
+    }
+    
+    label {
+        font-weight: bold;
+    }
+</style>

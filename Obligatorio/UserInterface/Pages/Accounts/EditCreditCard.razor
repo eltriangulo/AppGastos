@@ -1,0 +1,106 @@
+﻿@page "/CreditCards/{last4digits}/edit/"
+
+<PageTitle>Edit Credit Card</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject SessionLogic SessionLogic
+@inject NavigationManager NavigationManager
+@inject CreditCardLogic CreditCardLogic
+
+<div class="card">
+    <div class="card-header">EDIT CREDIT CARD</div>
+    <div class="card-body">
+        <label class="card-text p" for="issuingBank">IssuingBank:</label>
+        <input  required type="text" for="issuingBank" class="form-control" placeholder="@creditCard.IssuingBank" @bind="bank">
+        <br/>
+        <label class="card-text p" for="last4Digit">Last 4 Digits: </label>
+        <input  required type="text" for="last4Digit" class="form-control">
+        <br/>
+        <label class="card-text p" for="Curency">Currency:</label>
+        <select type="text" for="Curency" class="form-control"  placeholder="@creditCard.Currency" @bind="currency">
+            <option value="UYU" selected="selected">UYU</option>
+            <option value="USD">USD</option>
+        </select>
+        <br/>
+        <label class="card-text p" for="creationDate">Creation Date:</label>
+        <input readonly type="date" for="creationDate" class="form-control" placeholder="@creditCard.CreationDate" >
+        <br/>
+        <label class="card-text p" for="availableCredit">Available Credit: </label>
+        <input  required type="number" for="availableCredit" class="form-control" placeholder="@creditCard.AvaiableCredit" @bind="availableCredit">
+        <br/>
+        <label class="card-text p" for="DeadlineDate">Deadline Date:</label>
+        <input type="date" for="DeadlineDate" class="form-control" placeholder="@creditCard.DeadlineDate" @bind="deadline">
+        <br/>
+        <div class="error-message">@errorMessage</div>
+        <button class="btn btn-success" @onclick="SaveChanges">SAVE CHANGES</button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string last4digits { get; set; }
+
+    private Space? currentSpace;
+    private CreditCard? creditCard;
+    private bool everythigOk = true;
+    private string errorMessage;
+
+    private string bank;
+    private string currency;
+    private int availableCredit;
+    private DateTime deadline;
+
+    protected override void OnInitialized()
+    {
+        currentSpace = SessionLogic.GetCurrentSpace();
+        creditCard = CreditCardLogic.GetCreditCard(currentSpace.Id, last4digits);
+    }
+
+    public void SaveChanges()
+    {
+        everythigOk = true;
+        errorMessage = "";
+
+        try
+        {
+            creditCard.IssuingBank = bank;
+            creditCard.Last4Digits = last4digits;
+            creditCard.Currency = currency;
+            creditCard.AvaiableCredit = availableCredit;
+            creditCard.DeadlineDate = deadline;
+        }
+        catch (DomainException e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+
+        if (everythigOk)
+        {
+            CreditCardLogic.UpdateCreditCard(creditCard);
+            NavigationManager.NavigateTo("/accounts");
+        }
+
+    }
+
+}
+
+
+<style>
+     .error-message {
+             color: red;
+             padding: 10px;
+             border-radius: 5px;
+             margin-top: 10px;
+     }
+
+     button{
+         float: right;
+         align-content: center;
+     }
+
+     label {
+         font-weight: bold;
+     }
+ </style>

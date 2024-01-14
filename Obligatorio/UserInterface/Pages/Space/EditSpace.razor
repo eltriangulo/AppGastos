@@ -1,0 +1,111 @@
+﻿@page "/spaces/{id:int}/edit/"
+
+<PageTitle>Edit Space</PageTitle>
+
+@using Domain
+@using BusinessLogic
+@inject NavigationManager NavigationManager
+@inject SpaceLogic SpaceLogic
+@inject UserLogic UserLogic
+
+<div class="card">
+    <div class="card-header">EDIT SPACE</div>
+    <div class="card-body">
+        <label class="card-text p" for="name">Name:</label>
+            <input type="text" for="name" class="form-control" placeholder="@space.Name" @bind="name">
+            <br/>
+            <label class="card-text p" for="inviteUsers">Invite User with email:</label>
+                    <input type="text" for="inviteUsers" class="form-control" @bind="invitedUser">
+                    <button class="btn btn-success" @onclick="AddInvitedUser">Invite</button>
+            
+            <div class="error-message">@errorMessage</div>
+            <div class="alert-success">@successMessage</div>
+        <br/>
+        <button class="btn btn-success" @onclick="SaveChanges">SAVE CHANGES</button>
+        
+        
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int id {get; set; }
+    
+    private Space? space;
+    
+    private bool everythigOk = true;
+    private string errorMessage;
+    private string successMessage;
+    
+    private string? name = "";
+    private string? invitedUser = "";
+
+    protected override void OnInitialized()
+    {
+        space = SpaceLogic.GetSpace(id);
+    }
+    public void AddInvitedUser()
+    {
+        everythigOk = true;
+        try
+        {
+            User? user = UserLogic.GetUserByEmail(invitedUser);
+            space.InvitedUsers.Add(user);
+        }
+        catch (LogicException e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+
+        if (everythigOk)
+        {
+            successMessage = "User successfully invited";
+            SpaceLogic.UpdateSpace(space);
+        }
+
+    }
+
+    public void SaveChanges()
+    {
+        everythigOk = true;
+        errorMessage = "";
+
+        try
+        {
+            space.Name = name;
+        }
+        catch (Exception e)
+        {
+            everythigOk = false;
+            errorMessage = e.Message;
+        }
+        
+        if (everythigOk)
+        {
+            SpaceLogic.UpdateSpace(space);
+            NavigationManager.NavigateTo("/spaces");
+        }
+
+    }
+
+}
+
+
+<style>
+    .error-message {
+            color: red;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+    }
+    
+    button{
+        float: right;
+        align-content: center;
+    }
+    
+    label {
+        font-weight: bold;
+    }
+</style>

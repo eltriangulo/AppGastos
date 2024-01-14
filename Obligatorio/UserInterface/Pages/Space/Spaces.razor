@@ -1,0 +1,75 @@
+﻿@page "/Spaces"
+
+<PageTitle>Your Spaces</PageTitle>
+
+@using BusinessLogic
+@using Domain
+
+@inject SpaceLogic spaceLogic
+@inject SessionLogic sessionLogic
+@inject NavigationManager NavigationManager
+
+
+
+<h1>
+    Your Spaces
+    <a href="/Spaces/create/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Create +</a>
+</h1>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Admin</th>
+        <th>Invited Users</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+   
+    @foreach (var space in _spaces)
+    {
+        <tr>
+            <td>@space.Name</td>
+            <td>@space.Admin.Name</td>
+            <td>@spaceLogic.ShowInvitedUsers(space)</td>
+            <td>
+                <button class="btn btn-success btn-sm" @onclick="(() => ChangeSpace(space))">Change here</button>
+                <a class="btn btn-success btn-sm" href="/spaces/@space.Id/edit">Editar</a>
+                <button class="btn btn-danger btn-sm" @onclick="(() => DeleteSpace(space.Id.ToString()))">Eliminar</button>
+            </td>
+        </tr>
+    }
+            <div class="alert-success">@changeMessage</div>
+    </tbody>
+</table>
+
+@code{
+
+    private User? currentUser;
+    private Space? currentSpace;
+    
+    private string changeMessage = "";
+
+    private List<Space> _spaces = new List<Space>();
+
+    protected override void OnInitialized()
+    {
+        currentUser = sessionLogic.GetCurrentUser();
+        
+        _spaces = spaceLogic.GetAllSpacesFromUser(currentUser.Id);
+        currentSpace = sessionLogic.GetCurrentSpace();
+    }
+    private void DeleteSpace(string id)
+    {
+        spaceLogic.DeleteSpace(currentSpace);
+        _spaces = spaceLogic.GetAllSpacesFromUser(currentUser.Id);
+    }
+    private void ChangeSpace(Space space)
+    {
+        sessionLogic.LogOutSpace();
+        sessionLogic.SetCurrentSpace(space);
+        NavigationManager.NavigateTo("/Spaces");
+        changeMessage = "Space changed with success!" + " You are now in space: " + space.Name;
+    }
+}

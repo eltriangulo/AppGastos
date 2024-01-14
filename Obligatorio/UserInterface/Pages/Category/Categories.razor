@@ -1,0 +1,75 @@
+﻿@page "/Categories"
+
+<PageTitle>Category List</PageTitle>
+
+@using BusinessLogic
+@using Domain
+
+@inject CategoryLogic categoryLogic
+@inject TransactionLogic transactionLogic
+@inject SessionLogic sessionLogic
+@inject NavigationManager NavigationManager
+
+
+
+<h1>
+    Category List
+    <a href="/categories/create/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Create +</a>
+</h1>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Creation Date</th>
+        <th>Status</th>
+        <th>Type</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+   
+    @foreach (var category in _categories)
+    {
+        <tr>
+            <td>@category.Name</td>
+            <td>@category.CreationDate</td>
+            <td>@category.Status</td>
+            <td>@category.Type</td>
+            <td>
+                <a class="btn btn-success btn-sm" href="/categories/@category.Name/edit">Editar</a>   
+                <button class="btn btn-danger btn-sm" @onclick="(() => DeleteCategory(category))">Eliminar</button>
+                <div class="error-message">@errorMessage</div>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@code{
+
+    private Space? currentSpace;
+
+    private List<Category>? _categories = new List<Category>();
+
+    private string errorMessage = "";
+
+    protected override void OnInitialized()
+    {
+        currentSpace = sessionLogic.GetCurrentSpace();
+        _categories = categoryLogic.GetAllCategoriesFromSpace(currentSpace.Id);
+    }
+
+
+    private void DeleteCategory(Category Category)
+    {
+        errorMessage = "";
+        if(transactionLogic.GetAllTransactionsFromCategory(Category.Name, currentSpace.Id).Count > 0)
+        {
+            errorMessage = "No se puede eliminar una categoria con transacciones asociadas";
+            return;
+        }
+        categoryLogic.DeleteCategory(Category.Id);
+        _categories = categoryLogic.GetAllCategoriesFromSpace(currentSpace.Id);
+    }
+}

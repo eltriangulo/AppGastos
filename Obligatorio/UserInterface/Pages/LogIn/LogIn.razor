@@ -1,0 +1,91 @@
+﻿@page "/LogIn"
+@using BusinessLogic
+@using Domain
+@inject NavigationManager NavigationManager
+@inject SessionLogic SessionLogic
+@inject LogInLogic LogInLogic
+@inject SpaceLogic SpaceLogic
+
+<PageTitle>FinTrac</PageTitle>
+
+<style>
+    .button-green{
+        background-color: green;
+    }
+    
+    .error-message {
+            color: red;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+    }
+</style>
+<h1>Welcome to FinTrac!</h1>
+@if (!SessionLogic.IsLogged())
+{
+    <form>
+        <div class="form-group">
+            <label for="exampleInputEmail1">Email address</label>
+            <input type="email" class="form-control" id="exampleInputEmail1" placeholder="Enter email" @bind="email" required>
+            <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
+        </div>
+        <div class="form-group">
+            <label for="exampleInputPassword1">Password</label>
+            <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password" @bind="password" required>
+        </div>
+        @if (!everythigOk)
+        {
+            <div class="alert alert-danger" role="alert">
+                @errorMessage
+            </div>
+        
+        }
+        
+        <br/>
+
+        <button type="submit" class="btn btn-primary btn-lg" @onclick="Login">Log in</button>
+    </form>
+    <div>
+        <br/>
+        <button class="btn btn-primary button-green" @onclick="createNewAccount">Create new Account</button>
+        <br/>
+    </div>
+}
+
+@code
+{
+    bool everythigOk = true;
+    string email = "";
+    string password = "";
+    private string errorMessage;
+    private Domain.User? currentUser;
+    
+    
+    private void createNewAccount()
+    {
+        NavigationManager.NavigateTo("/Signup");
+    }
+
+    private void Login()
+    {
+        errorMessage = "";
+        everythigOk = true;
+        try
+        {
+            currentUser = LogInLogic.SearchUser(email, password);
+        }
+        catch (DomainException ex)
+        {
+            errorMessage = ex.Message;
+            everythigOk = false;
+        }
+        
+        if (everythigOk)
+        {
+            SessionLogic.SetCurrentUser(currentUser);
+            SessionLogic.SetCurrentSpace(SpaceLogic.GetDefaultSpaceFromRegisteredUser(currentUser.Email));
+            NavigationManager.NavigateTo("/", true);
+        }
+        
+    }
+}

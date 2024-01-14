@@ -1,0 +1,115 @@
+﻿@page "/Signup"
+
+
+@using BusinessLogic
+@using Domain
+@inject UserLogic UserLogic
+@inject SpaceLogic SpaceLogic
+@inject NavigationManager NavigationManager
+@inject SessionLogic SessionLogic
+
+
+<style>
+    .error-message {
+        color: red;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+</style>
+
+<h1>Sing Up</h1>
+<form>
+    <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" class="form-control" id="name" required @bind="name" />
+    </div>
+    <div class="form-group">
+        <label for="surname">Surname</label>
+        <input type="text" class="form-control" id="surname" required @bind="surname" />
+    </div>
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="text" class="form-control" id="email" required @bind="email" />
+    </div>
+    <div class="form-group">
+        <label for="address">Address</label>
+        <input type="text" class="form-control" id="address" required  @bind="address" />
+    </div>
+    <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" required id="password" @bind="password">
+    </div>
+    <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" class="form-control" id="confirmPassword" required @bind="passwordConfirmed" />
+        </div>
+    
+
+    <button type="button" class="btn btn-primary" @onclick="SaveChanges">Sing Up</button>
+
+    <a href="/">Cancel</a>
+    <div class="error-message">@errorMessage</div>
+    
+</form>
+
+@code {
+    private bool everythigOk = true;
+    
+    private string errorMessage;
+    
+    private string password;
+    private string passwordConfirmed;
+    private string name;
+    private string surname;
+    private string email;
+    private string address;
+
+    private void SaveChanges()
+    {
+        errorMessage = "";
+        everythigOk = true;
+        User newUser = new User();
+        try
+        {
+            newUser.Email = email;
+            newUser.Name = name;
+            newUser.Surname = surname;
+            newUser.Address = address;
+            newUser.SetPassword(password);
+
+        }
+        catch (DomainException e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+        try
+        {
+            UserLogic.ValidateEmailFormat(email);
+            UserLogic.CheckRepeatedEmail(newUser);
+            UserLogic.PasswordFormatOk(password);
+            UserLogic.PasswordAreTheSame(password, passwordConfirmed);
+        }
+        catch (LogicException e)
+        {
+            errorMessage = e.Message;
+            everythigOk = false;
+        }
+        if (everythigOk)
+        {
+            Space newSpace = new Space
+            {
+
+                Name = "Principal " + newUser.Name,
+                Admin = newUser
+            };
+            UserLogic.AddUser(newUser);
+            SpaceLogic.AddSpace(newSpace);
+            SessionLogic.SetCurrentUser(newUser);
+            SessionLogic.SetCurrentSpace(newSpace);
+            NavigationManager.NavigateTo("/", true);
+        }
+ 
+    }
+}

@@ -1,0 +1,81 @@
+﻿@page "/SpendingGoals"
+
+<PageTitle>Spending Goals List</PageTitle>
+
+@using BusinessLogic
+@using Domain
+
+@inject SpendingGoalsLogic spendingGoalsLogic
+@inject SessionLogic sessionLogic
+@inject NavigationManager NavigationManager
+
+<h1>
+    Spending Goals List
+    <a href="/SpendingGoals/create/"  class="btn btn-success btn-sm" style="float: right;margin-right: 40px;">Create +</a>
+      <h6>Link for share:
+      <NavLink href=@link>@link</NavLink>
+      </h6>
+</h1>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Monthly Budget</th>
+        <th>Categories</th>
+    </tr>
+    </thead>
+    <tbody>
+   
+    @foreach (var goals in _spendingGoals)
+    {
+        <tr>
+            <td>@goals.Title</td>
+            <td>@goals.MonthlyBudget</td>
+            <td>@spendingGoalsLogic.ReturnCategories(goals)</td>
+            <td> <button class="btn btn-primary" @onclick="() => generateShareLink(goals)">Share</button>
+                 <button class="btn btn-danger btn-sm" @onclick="() => stopShare(goals)">Stop Share</button>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@code{
+
+    private User? currentUser;
+    private Space? currentSpace;
+    
+    private string link = "";
+
+    private List<Domain.SpendingGoals> _spendingGoals = new List<Domain.SpendingGoals>();
+
+    protected override void OnInitialized()
+    {
+        _spendingGoals = getGoals();
+    }
+    private void generateShareLink(Domain.SpendingGoals goals)
+    {
+        goals.isShared = true;
+        link = "/SpendingGoals/" + goals.Id;
+    }
+    private void stopShare(Domain.SpendingGoals goals)
+    {
+        goals.isShared = false;
+        link = "";
+    }
+
+    private List<Domain.SpendingGoals> getGoals()
+    {
+        currentUser = sessionLogic.GetCurrentUser();
+        currentSpace = sessionLogic.GetCurrentSpace();
+
+        if (currentUser == null || currentSpace == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+
+        return spendingGoalsLogic.GetAllGoalsFromSpace(currentSpace.Id);
+    }
+
+}
